@@ -1,4 +1,4 @@
-import Shape from "../entities/Shape";
+import { IShape } from "../entities/interfaces/IShape";
 import Rectangle from "../entities/Rectangle";
 import Tetrahedron from "../entities/Tetrahedron";
 import Point from "../entities/Point";
@@ -6,7 +6,7 @@ import { EPSILON, ERROR_MESSAGES } from "../utils/constants";
 import { CalculationException } from "../exceptions/CustomErrors";
 
 class ShapeService {
-  static calculateArea(shape: Shape): number {
+  static calculateArea(shape: IShape): number {
     if (shape instanceof Rectangle) {
       return this.calculateRectangleArea(shape);
     }
@@ -16,21 +16,21 @@ class ShapeService {
     throw new CalculationException(ERROR_MESSAGES.INVALID_SHAPE);
   }
 
-  static calculatePerimeter(shape: Shape): number {
+  static calculatePerimeter(shape: IShape): number {
     if (shape instanceof Rectangle) {
       return this.calculateRectanglePerimeter(shape);
     }
     throw new CalculationException(ERROR_MESSAGES.INVALID_SHAPE);
   }
 
-  static calculateVolume(shape: Shape): number {
+  static calculateVolume(shape: IShape): number {
     if (shape instanceof Tetrahedron) {
       return this.calculateTetrahedronVolume(shape);
     }
     throw new CalculationException(ERROR_MESSAGES.INVALID_SHAPE);
   }
 
-  static isValidShape(shape: Shape): boolean {
+  static isValidShape(shape: IShape): boolean {
     if (shape instanceof Rectangle) {
       return this.isValidRectangle(shape.points);
     }
@@ -146,5 +146,5 @@ class ShapeService {
     return volume > EPSILON;
   }
 }
-
 export default ShapeService;
+

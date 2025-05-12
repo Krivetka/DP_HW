@@ -1,4 +1,4 @@
-import Shape from "./Shape";
+import {Shape} from "./Shape";
 import Point from "./Point";
 
 class Tetrahedron extends Shape {
