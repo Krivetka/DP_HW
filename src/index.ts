@@ -11,11 +11,12 @@ import { ShapeRepository } from "./entities/ShapeRepository";
 import { ShapeFilterService } from "./services/ShapeFilterService";
 import { ShapeSortService } from "./services/ShapeSortService";
 import { Warehouse } from "./entities/Warehouse";
+import { IShape } from "./entities/interfaces/IShape";
 
 const repository = new ShapeRepository();
 const filterService = new ShapeFilterService();
 const sortService = new ShapeSortService();
-const warehouse = Warehouse.getInstance();
+const warehouse = new Warehouse();
 
 function loadShapesFromFile(filePath: string): void {
   const shapesData = FileParser.parseFile(filePath);
@@ -26,7 +27,8 @@ function loadShapesFromFile(filePath: string): void {
       const shape = ShapeFactory.createShape(type, points);
       if (shape) {
         repository.add(shape);
-        warehouse.update(shape);
+        shape.addObserver(warehouse);
+        warehouse.setMetrics(shape);
         logger.info(`Created ${type} shape successfully`);
       }
     } catch (error) {
@@ -76,7 +78,6 @@ function demonstrateRepositoryOperations(): void {
   const rectangles = repository.getByType("Rectangle");
   const shapeToRemove = rectangles[0];
   repository.remove(shapeToRemove.name);
-  warehouse.remove(shapeToRemove.name);
   logger.info("Removed one rectangle from repository");
   logger.info(repository.getAll().map(shape => shape.name));
   
@@ -89,7 +90,6 @@ function demonstrateRepositoryOperations(): void {
   const newShape = ShapeFactory.createShape("Rectangle", points);
   if (newShape) {
     repository.add(newShape);
-    warehouse.update(newShape);
     logger.info("Added new rectangle to repository");
   }
   
@@ -110,6 +110,37 @@ function demonstrateSorting(): void {
   logger.info(sortedByZ.map(shape => `${shape.name}: z=${shape.points[0]?.z}`));
 }
 
+function checkWarehouse(): void {
+  const shapes = repository.getAll();
+  
+  shapes.forEach((shape: IShape) => {
+    const metrics = warehouse.get(shape.name);
+    logger.info(`Shape: ${shape.name}`);
+    if (metrics) {
+      logger.info(`Metrics: Area = ${metrics.area||null}, Perimeter = ${metrics.perimeter||null}, Volume = ${metrics.volume||null}`);
+    }
+  });
+}
+
+function updateWarehouse(): void {
+  const shapes = repository.getAll();
+  
+  shapes.forEach((shape: IShape) => {
+    try {
+      const newPoints = shape.points.map(point => 
+        new Point(point.x * Math.random()*10, point.y * Math.random()*10, point.z )
+      );
+      shape.updatePoints(newPoints);
+      const metrics = warehouse.get(shape.name);
+      logger.info(`Shape: ${shape.name}`);
+      if (metrics) {
+        logger.info(`Metrics: Area = ${metrics.area||null}, Perimeter = ${metrics.perimeter||null}, Volume = ${metrics.volume||null}`);
+      }
+    } catch (error) {
+      logger.error(`Failed to update shape ${shape.name}:`, error);
+    }
+  });
+}
 
 function handleError(error: unknown): void {
   if (error instanceof FileParseError) {
@@ -136,11 +167,18 @@ function main(): void {
     logger.info("Reading file:", { path: filePath });
 
     loadShapesFromFile(filePath);
+    logger.info("_____________________________");
     displayShapesByType();
+    logger.info("_____________________________");
     displayFilteredShapes();
+    logger.info("_____________________________");
     demonstrateRepositoryOperations();
+    logger.info("_____________________________");
     demonstrateSorting();
-
+    logger.info("_____________________________");
+    checkWarehouse();
+    logger.info("_____________________________");
+    updateWarehouse();
   } catch (error) {
     handleError(error);
   }

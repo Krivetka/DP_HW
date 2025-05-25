@@ -1,40 +1,48 @@
-import { IShape } from "./interfaces/IShape";
-import { IWarehouse, Metrics } from "./interfaces/IWarehouse";
+import { Observable } from "./Observable";
 import ShapeService from "../services/ShapeService";
+import { IShape } from "./interfaces/IShape";
+import logger from "../utils/logger";
 
-export class Warehouse implements IWarehouse {
+export class Warehouse extends Observable {
     private static instance: Warehouse;
-    private metrics: Map<string, Metrics>;
+    private metrics: Map<string, { area?: number; perimeter?: number; volume?: number }> = new Map();
 
-    private constructor() {
-        this.metrics = new Map<string, Metrics>();
-    }
-
-    public static getInstance(): Warehouse {
-        if (!Warehouse.instance) {
-            Warehouse.instance = new Warehouse();
+    constructor() {
+        super();
+        if (Warehouse.instance) {
+            return Warehouse.instance;
         }
-        return Warehouse.instance;
+        Warehouse.instance = this;
     }
 
-    update(shape: IShape): void {
-        const metrics: Metrics = {
-            area: ShapeService.calculateArea(shape),
-            volume: ShapeService.calculateVolume(shape),
-            perimeter: ShapeService.calculatePerimeter(shape)
-        };
-        this.metrics.set(shape.name, metrics);
+    public update(figure: IShape): void {
+        this.setMetrics(figure);
     }
 
-    get(shapeName: string): Metrics | undefined {
-        return this.metrics.get(shapeName);
+    get(figureId: string) {
+        return this.metrics.get(figureId);
     }
 
-    remove(shapeName: string): void {
-        this.metrics.delete(shapeName);
-    }
+    setMetrics(figure: IShape): void {
+        try {
+            const metrics: { area?: number; perimeter?: number; volume?: number } = {};
+            
+            try {
+                metrics.area = ShapeService.calculateArea(figure);
+            } catch (error) {}
+            
+            try {
+                metrics.perimeter = ShapeService.calculatePerimeter(figure);
+            } catch (error) {}
+            
+            try {
+                metrics.volume = ShapeService.calculateVolume(figure);
+            } catch (error) {}
 
-    clear(): void {
-        this.metrics.clear();
+            this.metrics.set(figure.name, metrics);
+            logger.info(`Metrics set for shape ${figure.name}:`, this.metrics.get(figure.name));
+        } catch (error) {
+            logger.info(error);
+        }
     }
-} 
+}
