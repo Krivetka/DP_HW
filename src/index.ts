@@ -1,24 +1,24 @@
-import {DatabaseAdapter} from "./adapters/DatabaseAdapter";
-import {ApiAdapter} from "./adapters/ApiAdapter";
-import {FileAdapter} from "./adapters/FileAdapter";
-import {CacheAdapter} from "./adapters/CacheAdapter";
+import { ProjectBuilder } from "./ProjectBuilder";
+import { ProjectGroup, Task} from "./ProjectComponent";
+import {ProjectIterator} from "./Iterator";
 
-import {StatisticsVisitor} from "./visitors/StatisticsVisitor";
-import {FilterVisitor} from "./visitors/FilterVisitor";
+const builder = new ProjectBuilder("Website Launch");
+const project = builder
+    .addTask("Design UI", 5)
+    .addTask("Setup Backend", 8)
+    .addGroup("Marketing", b => b
+        .addTask("Write blog post", 2)
+        .addTask("Create promo video", 3)
+    )
+    .build();
 
-const sources = [
-    new DatabaseAdapter("postgres://prod-db"),
-    new ApiAdapter("https://api.hr.io/employees"),
-    new FileAdapter("./data/employees.json"),
-    new CacheAdapter("hr-session-001")
-];
-
-const statsVisitor = new StatisticsVisitor();
-const filterVisitor = new FilterVisitor(emp => emp.salary > 50000);
-
-
-for (const source of sources) {
-    source.accept(statsVisitor);
-    source.accept(filterVisitor);
+const iterator = new ProjectIterator(project);
+while (iterator.hasNext()) {
+    const { component, depth } = iterator.next()!;
+    const prefix = " ".repeat(depth * 2);
+    if (component instanceof ProjectGroup) {
+        console.log(`${prefix}📦 ${component.getName()} (Group) - ${component.getTimeEstimate()}h`);
+    } else if (component instanceof Task) {
+        console.log(`${prefix}📝 ${component.getName()} - ${component.getTimeEstimate()}h`);
+    }
 }
-
