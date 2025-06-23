@@ -17,6 +17,18 @@ export class View {
         this.balanceEl = document.getElementById('balance') as HTMLElement;
         this.undoBtn = document.getElementById('undo') as HTMLButtonElement;
         this.redoBtn = document.getElementById('redo') as HTMLButtonElement;
+        this.bindStrategyChange();
+    }
+
+    bindStrategyChange() {
+        document.getElementById('filter-all')?.addEventListener('click', () => this.onStrategyChange('all'));
+        document.getElementById('filter-income')?.addEventListener('click', () => this.onStrategyChange('income'));
+        document.getElementById('filter-expense')?.addEventListener('click', () => this.onStrategyChange('expense'));
+    }
+
+    onStrategyChange(type: 'all' | 'income' | 'expense') {
+        const event = new CustomEvent('strategyChange', { detail: type });
+        window.dispatchEvent(event);
     }
 
     bindAddTransaction(handler: (desc: string, amount: number) => void) {
